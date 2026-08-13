@@ -1,0 +1,148 @@
+# Testing and Verification
+
+## Purpose
+
+This rule defines how AI agents should test changes made to Animation_App.
+
+The purpose of testing is not simply to make code pass. Testing should give
+reasonable confidence that new functionality works and existing functionality
+has not been unintentionally broken.
+
+---
+
+## 1. Test According to Risk
+
+Testing effort should be proportional to the risk and complexity of a change.
+
+A small documentation change does not require extensive testing.
+
+A change to the animation engine, project format, rendering system, timeline,
+or asset system requires substantially more verification.
+
+---
+
+## 2. Test Before Declaring Completion
+
+An AI agent must not claim that a change is complete without performing an
+appropriate verification step.
+
+Depending on the task, verification may include:
+
+- Automated tests
+- Type checking
+- Static analysis
+- Building the affected application
+- Running the application
+- Manual testing
+- Visual inspection
+- Export verification
+
+If a verification step cannot be performed, clearly state that it was not
+performed.
+
+Never claim that a test passed if it was not actually run.
+
+---
+
+## 3. Existing Tests
+
+Before changing behaviour covered by existing tests:
+
+1. Understand what the tests are checking.
+2. Run relevant tests when practical.
+3. Preserve valid existing tests.
+4. Update tests only when the intended behaviour has genuinely changed.
+
+Do not delete or weaken a test simply because it fails.
+
+A failing test should be investigated.
+
+---
+
+## 4. New Features
+
+New functionality should have appropriate tests where practical.
+
+The tests should verify the intended behaviour rather than merely increasing
+code coverage.
+
+Examples include:
+
+- Input validation
+- Data transformations
+- Animation calculations
+- Timeline operations
+- Layer ordering
+- Parent/child relationships
+- Asset loading
+- Project saving and loading
+- Export behaviour
+
+---
+
+## 5. Bug Fixes
+
+When fixing a reproducible bug:
+
+1. Reproduce or understand the failure.
+2. Identify the cause.
+3. Implement the smallest appropriate fix.
+4. Verify that the original problem is resolved.
+5. Add a regression test when practical.
+
+A regression test should prevent the same bug from silently returning later.
+
+---
+
+## 6. Animation Testing
+
+Animation systems require special attention.
+
+When appropriate, test:
+
+- Position interpolation
+- Rotation interpolation
+- Scale interpolation
+- Opacity interpolation
+- Keyframe timing
+- Easing
+- Parent/child transformations
+- Pivot points
+- Layer ordering
+- Visibility
+- Animation playback
+- Animation looping
+- Scene transitions
+
+Where numerical precision is involved, tests should allow for appropriate
+floating-point tolerance rather than requiring unrealistic exact equality.
+
+---
+
+## 7. Character and Rig Testing
+
+Character systems should be tested for:
+
+- Parent/child relationships
+- Transform inheritance
+- Pivot points
+- Layer ordering
+- Visibility toggles
+- Outfit switching
+- Pose application
+- Model loading and saving
+
+A change to one part of a character hierarchy should not unexpectedly alter
+unrelated parts.
+
+---
+
+## 8. Project Data Testing
+
+Project files and reusable assets are important user data.
+
+Changes to project or asset formats should be treated as high-risk.
+
+When changing a persistent format:
+
+- Consider

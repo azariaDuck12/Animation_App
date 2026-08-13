@@ -1,0 +1,118 @@
+# Project Constitution
+
+## Purpose
+
+This project is a cross-platform 2D animation and video editing application
+designed primarily for Gacha animators, while remaining useful for other
+2D puppet, stop-motion, keyframe, and image-based animation workflows.
+
+## Core Principles
+
+1. Stability over speed.
+2. Simplicity over unnecessary complexity.
+3. Maintainability over cleverness.
+4. Reusability over duplication.
+5. Clear architecture over quick hacks.
+6. Preserve existing functionality when adding features.
+7. Design for long-term cross-platform compatibility.
+8. Prefer small, understandable changes over large rewrites.
+
+## AI Behaviour
+
+AI agents must:
+
+- Read relevant project documentation and applicable Cursor rules before
+  making significant changes.
+- Understand existing code before modifying it.
+- Make the smallest reasonable change that solves the requested problem.
+- Avoid modifying unrelated files or functionality.
+- Never silently remove existing functionality.
+- Never introduce a new dependency when an existing solution is adequate.
+- Never make major architectural decisions without explaining the reasoning.
+- Ask for clarification when requirements are ambiguous and the ambiguity
+  could materially affect the implementation.
+- Clearly state assumptions when an assumption is necessary.
+- Prefer established project patterns over inventing new patterns.
+- Keep documentation synchronized with important architectural changes.
+
+## Architecture
+
+The application should be designed as modular systems with clear
+responsibilities.
+
+UI, application logic, animation logic, rendering, project data, asset
+management, and platform-specific functionality should not become
+unnecessarily coupled.
+
+Core functionality should avoid depending directly on a specific platform
+when a platform-independent solution is practical.
+
+## Changes
+
+Before significant implementation:
+
+1. Explain the proposed approach.
+2. Identify the files or systems likely to be affected.
+3. Identify important risks or compatibility concerns.
+4. Confirm that the approach fits the existing architecture.
+
+For small, obvious changes, the agent may proceed directly.
+
+## Code Quality
+
+Code should be:
+
+- Readable
+- Testable
+- Modular
+- Consistent
+- Appropriately documented
+
+Avoid premature optimization, unnecessary abstractions, and overly complex
+solutions.
+
+## Compatibility
+
+Do not assume that current versions of frameworks, libraries, operating
+systems, browsers, or AI tools will remain unchanged.
+
+Keep dependencies explicit and version-controlled.
+
+Avoid relying on undocumented or unstable behaviour when a stable alternative
+exists.
+
+## Testing
+
+New functionality should include appropriate tests where practical.
+
+Bug fixes should include a regression test when practical.
+
+Do not consider a feature complete merely because the code compiles.
+
+## Documentation
+
+Important architectural decisions must be documented.
+
+When a change materially alters architecture, data formats, public interfaces,
+or development workflow, the relevant documentation must be updated.
+
+## Git
+
+Make focused changes.
+
+Do not rewrite Git history unless explicitly requested.
+
+Do not force-push unless explicitly requested.
+
+Do not commit secrets, API keys, passwords, credentials, or private user data.
+
+## Final Check
+
+Before declaring work complete, verify:
+
+- The requested behaviour works.
+- Existing functionality has not been unnecessarily broken.
+- Relevant tests pass.
+- No unnecessary files or dependencies were introduced.
+- Documentation is updated when required.
+- The implementation follows the project rules.

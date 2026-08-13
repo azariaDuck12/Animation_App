@@ -1,0 +1,301 @@
+# AI Development Workflow
+
+## Purpose
+
+This rule defines how AI agents should work on the Animation_App project.
+
+The goal is to make AI-assisted development predictable, reviewable,
+maintainable, and safe as the project grows.
+
+AI agents should behave as collaborators working within an existing software
+project, not as isolated code generators.
+
+---
+
+## 1. Understand Before Changing
+
+Before making a meaningful change, the agent should:
+
+1. Read the user's request carefully.
+2. Identify the intended outcome.
+3. Inspect the relevant existing code.
+4. Read relevant project documentation.
+5. Read applicable project rules.
+6. Identify dependencies between the requested change and existing systems.
+7. Identify any important assumptions.
+
+Do not modify code merely because a change appears convenient.
+
+---
+
+## 2. Classify the Task
+
+Before implementation, determine whether the task is primarily:
+
+- Feature development
+- Bug fixing
+- Refactoring
+- Performance work
+- UI/UX work
+- Testing
+- Documentation
+- Build/dependency work
+- Architecture work
+
+A task may belong to multiple categories.
+
+Use the category to determine which rules, documentation, and tests are
+relevant.
+
+---
+
+## 3. Plan Before Significant Implementation
+
+For non-trivial changes, create a short implementation plan before editing
+multiple files.
+
+The plan should identify:
+
+- What will change
+- Why it needs to change
+- Which systems are affected
+- Which files are likely to be changed
+- Important risks
+- How the change will be tested
+
+Do not create a large plan for a trivial change.
+
+Plans should be proportional to the complexity of the task.
+
+---
+
+## 4. Check Existing Architecture
+
+Before introducing a new system, determine whether an existing system can
+reasonably support the requirement.
+
+Prefer:
+
+- Reusing existing systems
+- Extending existing interfaces
+- Following established project patterns
+- Small modular additions
+
+Avoid:
+
+- Duplicating functionality
+- Creating unnecessary abstractions
+- Creating parallel systems that solve the same problem
+- Rewriting working systems without a clear reason
+
+If the requested feature conflicts with the current architecture, explain the
+conflict before making a major architectural change.
+
+---
+
+## 5. Implement in Small Steps
+
+Prefer small, focused changes.
+
+Each logical change should be understandable and independently reviewable.
+
+Avoid combining unrelated changes into the same implementation.
+
+Do not modify unrelated files merely to "clean things up" unless explicitly
+requested.
+
+---
+
+## 6. Preserve Existing Behaviour
+
+When modifying existing functionality:
+
+- Preserve behaviour that is not part of the requested change.
+- Consider backwards compatibility.
+- Check dependent systems.
+- Avoid silently changing public interfaces or data formats.
+
+If existing behaviour must change, clearly explain the reason and potential
+impact.
+
+---
+
+## 7. Dependencies
+
+Before adding a dependency:
+
+1. Check whether the project already has a suitable dependency.
+2. Determine whether the new dependency is actually necessary.
+3. Consider maintenance and compatibility implications.
+4. Prefer stable, well-supported solutions.
+5. Record important dependency decisions when appropriate.
+
+Never add dependencies simply because they make a small task easier.
+
+---
+
+## 8. Test the Change
+
+After implementation:
+
+1. Run the most relevant automated tests.
+2. Run type checking or static analysis when applicable.
+3. Build the affected part of the project when applicable.
+4. Manually verify important behaviour when automated testing is insufficient.
+
+If tests cannot be run, explain why.
+
+Do not claim that something works without an appropriate verification step.
+
+---
+
+## 9. Review the Change
+
+Before declaring a task complete, review the implementation for:
+
+- Correctness
+- Regressions
+- Unnecessary complexity
+- Duplicated logic
+- Security problems
+- Performance concerns
+- Platform compatibility
+- Error handling
+- Missing tests
+- Documentation requirements
+
+Ask:
+
+"Did this solve the requested problem without unnecessarily changing
+anything else?"
+
+---
+
+## 10. Documentation
+
+Update documentation when a change affects:
+
+- Architecture
+- Public interfaces
+- Project conventions
+- Data formats
+- User-facing behaviour
+- Development workflow
+- Important technical decisions
+
+Do not create documentation for trivial implementation details that are
+already obvious from the code.
+
+---
+
+## 11. Communicate Clearly
+
+When reporting completed work, explain:
+
+### What changed
+
+Briefly describe the implementation.
+
+### Why
+
+Explain important design decisions.
+
+### Verification
+
+State what was tested or checked.
+
+### Limitations
+
+Mention anything that could not be verified or remains incomplete.
+
+### Follow-up
+
+Mention important follow-up work only when genuinely necessary.
+
+Do not hide failures or unresolved issues.
+
+---
+
+## 12. When Requirements Are Ambiguous
+
+If ambiguity could materially affect the architecture, user experience,
+data model, compatibility, or implementation:
+
+Ask for clarification before making a major decision.
+
+If the ambiguity is minor and a safe assumption is obvious:
+
+Proceed using the simplest reasonable assumption and state the assumption.
+
+Never invent major requirements.
+
+---
+
+## 13. Do Not Over-Engineer
+
+The project is being developed incrementally.
+
+Do not build systems that are not currently required merely because they might
+be useful in the future.
+
+Prefer a simple implementation that leaves room for future extension.
+
+However, avoid deliberately creating technical debt when a small additional
+amount of structure would prevent an obvious future problem.
+
+---
+
+## 14. AI Agent Boundaries
+
+AI agents must not:
+
+- Delete major systems without explicit approval.
+- Rewrite large parts of the project without explaining why.
+- Change architecture silently.
+- Remove tests simply because they fail.
+- Disable safety or validation checks to make tests pass.
+- Replace working dependencies without justification.
+- Commit secrets or credentials.
+- Modify unrelated functionality.
+- Claim successful verification that was not performed.
+
+---
+
+## 15. Escalation
+
+The agent should request human review before:
+
+- Major architectural changes
+- Changing persistent project or asset formats
+- Breaking public interfaces
+- Removing major functionality
+- Introducing significant new dependencies
+- Changing security-sensitive behaviour
+- Making decisions that could substantially affect future development
+
+---
+
+## Standard Workflow
+
+For a meaningful development task, follow this sequence:
+
+Understand
+    ↓
+Inspect
+    ↓
+Plan
+    ↓
+Check architecture
+    ↓
+Implement
+    ↓
+Test
+    ↓
+Review
+    ↓
+Document
+    ↓
+Report
+
+The workflow may be shortened for trivial changes, but important safety and
+verification steps should not be skipped merely for convenience.
