@@ -1,0 +1,36 @@
+---
+description: Architecture rules for Animation_App
+globs:
+  - "lib/**/*.dart"
+  - "test/**/*.dart"
+alwaysApply: true
+---
+
+# Animation_App Architecture Rules
+
+## Purpose
+
+These rules define how AI agents must structure and modify application code.
+
+The human-readable architecture specification is maintained in:
+
+`docs/architecture.md`
+
+The conceptual data model is maintained in:
+
+`docs/data-model.md`
+
+AI agents must follow those documents when implementing features.
+
+---
+
+## 1. Respect the Architecture Boundaries
+
+Use the following conceptual layers:
+
+```text
+Presentation
+     ↓
+Application
+     ↓
+Domain
