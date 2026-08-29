@@ -1,740 +1,371 @@
-Animation_App Architecture
+# Animation_App Architecture
 
-Status
+## Status
 
-This document defines the technical architecture for Animation_App.
+Adopted 2026-08-29 (ADR-001). Supersedes the Flutter-era architecture,
+archived at `archive/2026-08-flutter-architecture.md`.
 
-It establishes the boundaries between the user interface, application logic,
-domain model, and infrastructure.
-
-The architecture is intended to support the MVP while allowing the application
-to grow into the larger feature set described in "docs/features.md".
-
-The architecture should not be interpreted as a requirement to implement
-future features early.
-
----
-
-1. Architecture Goals
-
-The architecture should:
-
-1. Keep the core animation and project model independent from Flutter UI.
-2. Keep UI components from becoming the source of truth for project data.
-3. Support project saving and loading.
-4. Support versioned project formats and future migrations.
-5. Make animation logic independently testable.
-6. Separate rendering from persistent project data.
-7. Support multiple platforms.
-8. Allow future features without requiring unnecessary rewrites.
-9. Avoid unnecessary dependencies and abstractions.
-10. Keep the MVP implementation as simple as reasonably possible.
+This document keeps every architectural *principle* of that earlier
+document — layered design, UI is not the source of truth,
+animation data independent of the timeline, versioned project format,
+reusable definitions separate from instances — and makes the concrete
+decisions it left open. Where a decision is recorded in
+`decisions.md`, the ADR number is given.
 
 ---
 
-2. Architectural Overview
+## 1. Goals
 
-The application is organised into four conceptual layers:
-
-┌─────────────────────────────────────────┐
-│              Presentation               │
-│                                         │
-│ Canvas • Timeline • Layers • Inspector  │
-│ Project screens • Controls • Navigation │
-└────────────────────┬────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────┐
-│              Application                │
-│                                         │
-│ Editing • Project operations            │
-│ Animation playback • Commands           │
-│ Export orchestration                    │
-└────────────────────┬────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────┐
-│                 Domain                  │
-│                                         │
-│ Project • Scene • Character • Rig       │
-│ Asset • Pose • Animation • Keyframe     │
-│ Transform • Other core concepts         │
-└────────────────────┬────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────┐
-│             Infrastructure              │
-│                                         │
-│ File storage • Asset loading            │
-│ Rendering • Export • Platform services  │
-└─────────────────────────────────────────┘
-
-The exact Dart package/file organisation may evolve, but these conceptual
-boundaries should remain clear.
+1. The complete edit → run → test loop must work on a low-specification
+   tablet with no paid remote machine (ADR-001, `dev-environment.md`).
+2. Keep the animation and project model independent of the UI framework
+   and of the browser, so it can be tested in plain Node.
+3. One renderer for viewport, playback and export.
+4. Save continuously; never lose work to a discarded browser tab.
+5. Versioned, migratable project format from day one.
+6. Undo/redo designed in from the first command.
+7. Few dependencies, each one justified.
+8. Keep the MVP small.
 
 ---
 
-3. Presentation Layer
+## 2. Technology stack (ADR-001, ADR-002, ADR-003)
 
-The presentation layer contains Flutter UI.
+| Concern | Choice | Notes |
+| --- | --- | --- |
+| Language | TypeScript (strict) | Runs everywhere the tablet's browser runs; best AI-assistant fluency of any option. |
+| Build / dev server | Vite | Sub-second hot reload; ~200 MB RAM; ships Android-arm64 binaries so it runs inside Termux. |
+| UI panels | React | Layers, timeline, inspector, dialogs. The canvas itself is driven imperatively, outside React. |
+| Rendering | HTML Canvas 2D | Hand-written renderer, ~200 lines. WebGL is not needed for hundreds of sprites. |
+| State / undo | Hand-rolled store + `immer` patches | Every edit is a command producing forward and inverse patches. |
+| Validation | `zod` | Schema for `project.json`; validates after migration. |
+| Local storage | IndexedDB via `idb` | Autosave, recent projects, asset blobs. |
+| Project file | ZIP via `fflate` | `.animproj` = `project.json` + `assets/`. |
+| Video export | WebCodecs + `mp4-muxer` | Client-side MP4. `MediaRecorder` WebM fallback. |
+| Tests | Vitest | Domain and application tests run in Node, no browser. |
+| Formatting | Prettier | ESLint optional; keep the tool set light. |
+| Delivery | Static site, installable PWA | Free static hosting; no server. |
 
-Examples include:
+Runtime dependencies for the MVP: `react`, `react-dom`, `immer`, `zod`,
+`idb`, `fflate`, `mp4-muxer`. Nothing else without an ADR.
 
-- Project screens
-- Editor screen
-- Canvas UI
-- Timeline UI
-- Layer panel
-- Inspector
-- Buttons and controls
-- Navigation
-- Dialogs
-- Touch and mouse interaction
-
-The presentation layer is responsible for:
-
-- Displaying application state
-- Collecting user input
-- Requesting application operations
-- Presenting errors and feedback
-
-The presentation layer must not contain core project or animation business
-logic.
+Explicitly *not* used for the MVP: Rust/WASM (ADR-002), a scene-graph
+library such as PixiJS or Konva (ADR-004), a database (ADR-005), a backend.
 
 ---
 
-4. Application Layer
+## 3. Layers
 
-The application layer coordinates user-facing operations.
+The four conceptual layers of the earlier architecture are kept and mapped
+to folders. The dependency rule is enforced by the simplest possible
+mechanism: `domain/` and `app/` tests run in Node, where `window`,
+`document` and `HTMLCanvasElement` do not exist, so any accidental browser
+dependency fails immediately.
 
-Examples include:
+```text
+src/
+├── domain/        Pure TypeScript. Types, zod schema, transform maths,
+│                  animation evaluation, migrations. No DOM, no React.
+├── app/           Commands (immer), ProjectStore with undo/redo,
+│                  editor state (selection, mode, playhead), playback clock.
+├── render/        Canvas 2D renderer, image cache, hit-testing.
+│                  Depends on domain only. Takes a CanvasRenderingContext2D.
+├── infra/         IndexedDB store, .animproj import/export, image decoding,
+│                  video export (WebCodecs), file pickers/downloads.
+├── ui/            React components: EditorShell, Viewport, Timeline,
+│                  LayersPanel, Inspector, CharacterEditor, dialogs.
+└── main.tsx
+```
 
-- Creating a project
-- Opening a project
-- Saving a project
-- Adding an asset
-- Creating a character
-- Editing transforms
-- Creating keyframes
-- Playing an animation
-- Exporting a scene
+```text
+        ui
+     ┌───┼──────────┐
+     ▼   ▼          ▼
+    app  render   infra
+     │    │         │
+     └────┼─────────┘
+          ▼
+        domain
+```
 
-The application layer may coordinate domain objects and infrastructure
-services.
+- `domain` depends on nothing in the app.
+- `app`, `render` and `infra` depend on `domain` only (and on each other
+  never).
+- `ui` may depend on all of them.
 
-It should not contain unnecessary UI-specific implementation details.
-
----
-
-5. Domain Layer
-
-The domain layer contains the core concepts and rules of Animation_App.
-
-Examples include:
-
-- Project
-- Scene
-- Asset
-- SceneObject
-- Character
-- CharacterPart
-- CharacterInstance
-- Rig
-- Pose
-- Transform
-- Animation
-- AnimationTrack
-- Keyframe
-
-The domain layer should be independent from Flutter widgets.
-
-The animation system should be usable in automated tests without requiring
-the Flutter UI to be rendered.
+Mapping to the earlier document's layers: Presentation = `ui`;
+Application = `app`; Domain = `domain`; Infrastructure = `infra` and
+`render`.
 
 ---
 
-6. Infrastructure Layer
+## 4. The project document is the source of truth
 
-The infrastructure layer handles external systems and implementation
-details.
+The whole editable state is one immutable `Project` value (see
+`data-model.md`). The store holds the current value; React components read
+from it through `useSyncExternalStore`; the renderer takes it as an
+argument. There is no second copy of the scene inside the canvas layer, the
+timeline or anywhere else.
 
-Potential responsibilities include:
-
-- Project file storage
-- Asset file storage
-- Image loading
-- Image import
-- Rendering backends
-- Video export
-- Platform-specific services
-- File-system access
-- Other external integrations
-
-Infrastructure implementations should be replaceable where practical.
+Transient editor state — selection, active mode, playhead frame, zoom and
+pan, which panels are open — lives in a separate `EditorState` in `app/`.
+It is never written to the project file.
 
 ---
 
-7. Dependency Direction
+## 5. Commands, undo and redo (ADR-006)
 
-Dependencies should generally point toward the more stable/core parts of the
-application.
+Every change to the project goes through one function:
 
-Conceptually:
+```ts
+store.dispatch(name: string, recipe: (draft: Project) => void): void
+```
 
-Presentation
-     ↓
-Application
-     ↓
-Domain
+`dispatch` runs the recipe with `immer`'s `produceWithPatches`, stores the
+inverse patches on the undo stack, clears the redo stack, bumps
+`modifiedAt`, and notifies subscribers. Undo applies inverse patches; redo
+applies forward patches.
 
-Infrastructure provides implementations for services required by the
-application or domain without forcing the domain to depend on infrastructure
-details.
+Consequences:
 
-The domain should not depend directly on Flutter widgets, screen classes, or
-platform-specific APIs.
-
----
-
-8. UI Is Not the Source of Truth
-
-The persistent project model is the source of truth.
-
-For example:
-
-                 Project Data
-                     ↑
-                     │
-        ┌────────────┼────────────┐
-        │            │            │
-        ▼            ▼            ▼
-     Canvas       Timeline      Inspector
-        UI            UI            UI
-
-The UI displays and edits project state.
-
-It must not maintain a separate hidden version of:
-
-- The project
-- The scene hierarchy
-- The character hierarchy
-- Animation data
-- Keyframes
-- Asset relationships
-
-This principle is especially important because multiple UI surfaces may edit
-the same underlying data.
+- Commands are ordinary functions that mutate a draft. There is no command
+  class hierarchy to maintain.
+- Undo/redo works for every command automatically, including ones written
+  later.
+- Continuous gestures (dragging a part) call a separate
+  `store.transient(recipe)` that updates the value without recording
+  history, and commit one `dispatch` on gesture end, so a drag is one undo
+  step.
+- Autosave subscribes to the store and writes the project after a short
+  debounce (see §8).
 
 ---
 
-9. Domain Model
+## 6. Animation evaluation
 
-The conceptual domain model is defined in:
+```text
+Project + sceneId + frame
+        ↓
+evaluateScene()  →  EvaluatedScene (a flat list of draw items,
+        ↓            back-to-front, each with a world matrix, asset id,
+        ↓            opacity and size)
+render()         →  pixels on a canvas
+```
 
-"docs/data-model.md"
+`evaluateScene` (in `domain/`) is a pure function. For each scene object it
+resolves the object's transform at the given frame (base transform overridden
+per property by that object's tracks), and for a character instance it
+resolves each part's transform (rest transform overridden per property by
+tracks targeting that instance and part), composes world matrices down the
+parent hierarchy, and emits draw items in draw order.
 
-The architecture should follow the distinctions defined there.
+Keyframe interpolation (`domain/animation.ts`):
 
-Important distinctions include:
+- Before the first keyframe: the first keyframe's value.
+- After the last: the last keyframe's value.
+- Between two: `a + (b − a) · ease(t)` where `t` is the normalised frame
+  position and `ease` is the *earlier* keyframe's easing. `hold` returns
+  `a` until the next keyframe.
+- Rotation is interpolated as a plain number (no shortest-path wrapping);
+  animators control direction by choosing keyframe values.
 
-Asset
-  ≠
-Character Part
-  ≠
-Scene Object
-  ≠
-Character Instance
-
-Reusable definitions should be separated from scene-specific instances.
-
----
-
-10. Project and Scene Structure
-
-A project conceptually contains:
-
-Project
-├── Metadata
-├── Assets
-├── Characters
-├── Poses
-└── Scenes
-
-A scene conceptually contains:
-
-Scene
-├── Scene Objects
-└── Animation Data
-
-A project may contain multiple scenes.
-
-Characters and other reusable resources should not be permanently tied to one
-scene unless a future feature explicitly requires that behaviour.
+Transform maths (`domain/transform.ts`) is a small 2-D affine matrix module
+(`[a, b, c, d, e, f]`, the same layout as `CanvasRenderingContext2D
+.setTransform`). See `data-model.md` §7 for the composition rule.
 
 ---
 
-11. Character Architecture
+## 7. Rendering (ADR-004)
 
-Characters are reusable definitions.
+`render/renderScene.ts`:
 
-A character contains visual parts and rig information.
+```ts
+renderScene(ctx: CanvasRenderingContext2D, evaluated: EvaluatedScene,
+            images: ImageCache, options: { background?: string }): void
+```
 
-Conceptually:
+For each draw item: `ctx.setTransform(worldMatrix)`,
+`ctx.globalAlpha = opacity`, `ctx.drawImage(bitmap, 0, 0)`.
 
-Character
-├── Character Parts
-└── Rig
+The same function draws:
 
-A character can be instantiated into a scene:
+- the **viewport** (with an additional view matrix for zoom/pan, and a
+  second, transparent **overlay canvas** on top for selection outlines,
+  pivot markers and transform handles — never mixed into the scene render);
+- **playback** (a `requestAnimationFrame` loop advancing the playhead);
+- **still export** (an `OffscreenCanvas` at project resolution →
+  `toBlob('image/png')`);
+- **video export** (an `OffscreenCanvas` per frame → `VideoFrame` →
+  `VideoEncoder`).
 
-Project
-├── Characters
-│   └── Alex
-│
-└── Scene
-    ├── Alex Instance
-    └── Alex Instance
+The `ImageCache` maps asset IDs to decoded `ImageBitmap`s and is the only
+place image decoding happens.
 
-Each instance can have its own scene-specific:
+Hit testing (`render/hitTest.ts`) inverts each draw item's world matrix,
+transforms the pointer into image space and checks the image bounds,
+testing front-to-back. Alpha-aware hit testing is a P1 refinement.
 
-- Position
-- Rotation
-- Scale
-- Pose
-- Animation
-- Other state
-
-Changing an instance must not unexpectedly modify the reusable character
-definition.
-
----
-
-12. Rig and Hierarchy
-
-The rig defines relationships between character parts.
-
-Example:
-
-Root
-└── Body
-    ├── Head
-    ├── Upper Arm
-    │   └── Lower Arm
-    │       └── Hand
-    └── Leg
-        └── Lower Leg
-
-The rig should contain structural relationships and pivot information.
-
-It should not be responsible for storing image files.
-
-Character parts should reference assets.
+Why Canvas 2D and not WebGL or a library: a Gacha scene is a few characters
+of 20–60 parts each — low hundreds of sprites. Canvas 2D on a mobile GPU
+draws that comfortably at 30 fps. A scene-graph library would introduce a
+second scene representation that competes with the project document as the
+source of truth. If profiling later shows a need, the renderer is one
+function behind one interface and can be replaced with a WebGL
+implementation without touching `domain/` or `app/`.
 
 ---
 
-13. Transform System
+## 8. Persistence (ADR-005, ADR-007, `project-file-format.md`)
 
-The MVP transform system supports:
+Two persistence paths:
 
-- Position
-- Rotation
-- Scale
+1. **Local autosave** — IndexedDB. Object stores: `projects` (project JSON
+   keyed by project ID), `assets` (Blobs keyed by `projectId/assetId`),
+   `recent` (ID, name, modified time, thumbnail). The store's autosave
+   subscriber writes the project ~1 s after the last command. Asset blobs
+   are written once at import. This is an MVP requirement, not a later
+   feature: mobile browsers evict background tabs and the user would
+   otherwise lose everything since the last manual save.
+2. **Portable project file** — `.animproj`, a ZIP containing
+   `project.json` and `assets/`. Used for backup, moving between devices
+   and sharing.
 
-Opacity may be supported if practical.
+Both paths carry the same `project.json` with an explicit `formatVersion`.
+Loading always runs `migrate()` then `ProjectSchema.parse()`.
 
-Transforms should be represented in a way that supports hierarchical
-parent/child relationships.
-
-The exact mathematical representation is an implementation detail and should
-not be exposed unnecessarily throughout the application.
-
----
-
-14. Animation Architecture
-
-Animation data must be independent of the timeline UI.
-
-Conceptually:
-
-Animation
-└── Animation Track
-    ├── Target
-    ├── Property
-    └── Keyframes
-
-Example:
-
-Animation Track
-├── Target: Upper Arm
-├── Property: Rotation
-└── Keyframes
-    ├── Time: 0
-    │   Value: 0°
-    └── Time: 20
-        Value: 45°
-
-The animation system evaluates this data during playback and rendering.
-
-The timeline is an editor for this data, not its owner.
+Storage limits: browsers grant an origin a large quota (commonly hundreds of
+MB or more; Safari is the most conservative). The app requests persistent
+storage (`navigator.storage.persist()`) so the OS does not clear it under
+pressure, and shows remaining quota in the project list.
 
 ---
 
-15. Playback
+## 9. Export (ADR-008)
 
-Playback should use the same underlying animation model used by export.
+- **Still image**: render the current frame at project resolution to an
+  `OffscreenCanvas`, `toBlob`, trigger a download.
+- **Video (MP4)**: for each frame 0..duration−1, render to an
+  `OffscreenCanvas`, wrap as a `VideoFrame` with the correct timestamp,
+  feed a `VideoEncoder` (H.264 `avc1.42001f` or higher-level profile; fall
+  back to VP9), mux with `mp4-muxer`, produce a Blob, download. Runs in a
+  Web Worker so the UI stays responsive; progress is reported per frame.
+- **Fallback (WebM)**: where WebCodecs is unavailable, play the scene into
+  `canvas.captureStream()` and record with `MediaRecorder`. Real-time only;
+  may drop frames on slow devices. The UI says so.
+- **Audio**: not in the MVP. When added (P1), audio is muxed as a second
+  track in the same pipeline.
 
-Conceptually:
-
-Project Data
-     ↓
-Animation Evaluation
-     ↓
-Scene State at Time T
-     ↓
-Rendering
-
-This helps reduce differences between:
-
-- Editor preview
-- Playback
-- Export
-
-Temporary playback state such as the current playhead position should remain
-separate from persistent project content unless explicitly saved.
+Downloads on tablets: `showSaveFilePicker` is desktop-only, so the export
+path uses an anchor download (`<a download>`) which works on Android Chrome
+and iOS Safari. The File System Access API is an enhancement where present.
 
 ---
 
-16. Rendering
+## 10. Tablet-first UI constraints
 
-Rendering should be treated as a separate concern from project data.
+The primary development device is also the primary test device, so the UI
+is designed for touch from the start:
 
-Conceptually:
-
-Project Data
-     ↓
-Animation Evaluation
-     ↓
-Renderable Scene State
-     ↓
-Rendering Backend
-     ↓
-Display / Export
-
-The project model should describe what exists.
-
-The rendering system determines how it is displayed.
-
-This separation is important for future features such as:
-
-- Warp deformers
-- Lighting
-- Shadows
-- Filters
-- Video
-- Effects
-- Rendering optimisation
-
-These features should not be implemented merely because the architecture
-allows them.
+- Every handle and control is at least 44 × 44 CSS px.
+- Pinch to zoom and two-finger drag to pan the viewport; one finger drags
+  the selected object. No behaviour depends on hover.
+- Panels stack vertically on narrow screens and sit side-by-side on wide
+  ones; a single layout component owns the breakpoints.
+- The timeline is horizontally scrollable and pinch-zoomable.
+- Pointer Events (not separate mouse/touch handlers) throughout.
+- Numeric fields in the inspector accept typed values for precision.
 
 ---
 
-17. Asset Management
+## 11. Performance principles
 
-Assets should be stored/referenced separately from scene objects.
+Measure before optimising, but do not build the obvious slow thing:
 
-For example:
-
-Asset
-└── arm.png
-
-A character part may reference that asset:
-
-CharacterPart
-└── Asset → arm.png
-
-The same asset may be reused where appropriate.
-
-The exact storage mechanism is an implementation decision.
+- Render only when dirty: a store subscription sets a flag; one
+  `requestAnimationFrame` draws.
+- React components subscribe to slices (`selectScene`, `selectTrack`), not
+  the whole project, so a keyframe edit does not re-render the layers panel.
+- Decoded `ImageBitmap`s are cached; large imports are downscaled to the
+  project resolution at import time (keeping the original file in the
+  asset store).
+- Video export runs in a worker.
+- Playback frame = `floor((now − start) · fps / 1000) mod duration`, so a
+  slow device drops frames rather than slowing the animation.
 
 ---
 
-18. Project Serialization
+## 12. Error handling
 
-Project data must be serializable.
-
-The project format should have an explicit version identifier.
-
-Conceptually:
-
-Project File
-├── formatVersion
-└── project data
-
-The application must not assume that the current project structure will remain
-unchanged forever.
-
-Future versions may require migrations.
+Errors are typed values in `domain/` and `infra/` (`ProjectLoadError`,
+`UnsupportedVersionError`, `MissingAssetError`, `ExportError`), each with a
+user-facing message. `ui/` shows them in a single toast/dialog component.
+The renderer draws a placeholder for a missing asset rather than throwing.
 
 ---
 
-19. Project Format Migration
+## 13. Testing strategy
 
-When the project format changes, the application should be able to recognise
-older supported versions and migrate them to the current format where
-practical.
+Priority order, matching the risk ordering of the earlier architecture document:
 
-Conceptually:
+1. `domain/` — transform composition, pivot behaviour, parent/child
+   inheritance, keyframe interpolation and easing, `evaluateScene` output,
+   schema validation, migrations against fixture files for every past
+   format version. Plain Vitest in Node. This is where most tests live.
+2. `app/` — each command, plus "dispatch then undo yields the original
+   project" property tests over a set of commands.
+3. `infra/` — `.animproj` round trip (export then import equals original);
+   IndexedDB via `fake-indexeddb` in tests.
+4. `render/` — a recording fake `CanvasRenderingContext2D` that captures
+   `setTransform`/`drawImage` calls, so draw order and matrices can be
+   asserted without a real canvas.
+5. `ui/` — a few smoke tests with React Testing Library. End-to-end browser
+   tests (Playwright) are a CI-only addition for later; they will not run on
+   the tablet.
 
-Project v1
-   ↓
-Migration
-   ↓
-Current Project Model
-   ↓
-Project v2
-
-Migration logic should be tested.
-
-A project format change should be treated as an important architectural
-change and documented in "docs/decisions.md" when that document is created.
-
----
-
-20. Undo and Redo
-
-Undo/redo is an important architectural consideration for the editor.
-
-Editing operations should be structured so that undo/redo can be added without
-rewriting the core data model.
-
-Where practical, editing operations should eventually be represented as
-explicit commands or reversible operations.
-
-A complete undo/redo system is not required before the MVP editing workflow is
-proven.
+Numerical assertions use a tolerance (`toBeCloseTo`).
 
 ---
 
-21. Autosave
+## 14. Continuous integration and delivery
 
-The architecture should allow autosave to be added later.
-
-Autosave is not an MVP requirement.
-
-The project state and persistence system should therefore avoid designs that
-make future autosave unnecessarily difficult.
-
----
-
-22. Error Handling
-
-Errors should be represented and handled deliberately.
-
-Examples include:
-
-- Invalid project data
-- Unsupported project version
-- Missing asset
-- Failed asset import
-- Failed save
-- Failed load
-- Failed export
-
-Low-level infrastructure errors should not leak unnecessarily into the UI.
-
-User-facing errors should be understandable.
+GitHub Actions on every push and pull request: `npm ci`, `tsc --noEmit`,
+`vitest run`, `vite build`. On `main`, deploy the built `dist/` to static
+hosting so the latest app is always available at a URL the tablet can open.
+The app is published with GitHub Pages at
+`https://azariaduck12.github.io/Animation_App/` (see `dev-environment.md`
+§6).
 
 ---
 
-23. Testing Architecture
+## 15. Cross-platform reach
 
-Core domain and application logic should be testable without requiring a
-fully rendered application.
+The MVP targets the browsers on the devices Gacha animators use:
 
-Priority testing areas include:
+- Android: Chrome (primary test target; it is the tablet).
+- iOS/iPadOS: Safari 17+.
+- ChromeOS, Windows, macOS, Linux: any Chromium browser or Firefox.
 
-- Project creation
-- Project serialization
-- Project loading
-- Project migration
-- Transform calculations
-- Parent/child transformations
-- Pivot behaviour
-- Keyframe evaluation
-- Interpolation
-- Animation playback calculations
-- Asset references
-
-UI tests should be added where they provide meaningful protection for
-important workflows.
+The app is installable as a PWA (P1) which gives an icon, full-screen and
+offline use. Native store packaging (Trusted Web Activity for Play, Capacitor
+for iOS) is possible later without changing the code base, and is out of
+scope.
 
 ---
 
-24. Cross-Platform Architecture
+## 16. What deliberately stays out of the MVP
 
-Flutter is the application framework.
-
-The architecture should support:
-
-- Android
-- iOS
-- Windows
-- macOS
-- Linux
-- Web
-
-However, "supports a platform" should mean more than merely compiling.
-
-Important workflows should eventually be tested on supported platforms.
-
-Platform-specific functionality should be isolated behind appropriate
-boundaries rather than spread throughout the domain model.
+Warp/mesh deformers, IK, audio, drawn frames, effects, camera animation,
+multi-scene sequencing, poses as a runtime concept, social features. The
+data model reserves nothing for them except a versioned format and a
+`kind` discriminator on tracks and scene objects (see `data-model.md`),
+which is the smallest structure that prevents a painful migration later.
 
 ---
 
-25. Performance Principles
+## 17. Architectural changes require review
 
-Animation editors can become computationally expensive.
-
-The MVP should therefore avoid unnecessary complexity and premature
-optimisation.
-
-However, the architecture should avoid obvious designs that require the
-entire application to rebuild for every small animation change.
-
-Performance-sensitive systems may eventually include:
-
-- Rendering
-- Animation evaluation
-- Timeline updates
-- Large layer hierarchies
-- Asset loading
-- Video processing
-
-Optimisation should be guided by measurement rather than speculation.
-
----
-
-26. Dependencies
-
-Dependencies should be kept to a reasonable minimum.
-
-Before adding a dependency, the implementation should consider:
-
-1. Whether the functionality is actually required.
-2. Whether Flutter/Dart already provides the required capability.
-3. Whether the dependency is maintained.
-4. Whether it supports required platforms.
-5. Whether its licensing is appropriate.
-6. Whether it introduces unnecessary architectural coupling.
-
-Dependencies should not be added merely because they make a small task
-slightly easier.
-
----
-
-27. MVP Boundary
-
-The architecture must not become an excuse to implement future features
-prematurely.
-
-The MVP focuses on:
-
-Project
-  ↓
-Import image assets
-  ↓
-Scene
-  ↓
-Layers / objects
-  ↓
-Character parts
-  ↓
-Pivots / hierarchy
-  ↓
-Transforms
-  ↓
-Keyframes
-  ↓
-Timeline
-  ↓
-Playback
-  ↓
-Image / video export
-
-Features such as:
-
-- Warp deformers
-- Advanced lighting
-- Shadows
-- Drawing
-- Social features
-- Advanced rigging
-- Complex effects
-
-remain outside the MVP unless the roadmap is deliberately changed.
-
----
-
-28. Architecture Evolution
-
-This architecture is expected to evolve as the application is developed.
-
-However, architectural changes should be deliberate.
-
-Before making a major architectural change, consider:
-
-- What problem does it solve?
-- What existing code does it affect?
-- Does it simplify or complicate the project?
-- Does it support an actual requirement?
-- Can the change be tested?
-- Does it require a documentation update?
-- Does it require a decision record?
-
-Major architectural changes should be recorded in "docs/decisions.md" once
-that document exists.
-
----
-
-29. Core Architecture Principles
-
-The following principles are authoritative:
-
-1. Keep domain logic independent from Flutter UI.
-2. Keep business logic out of UI widgets.
-3. Treat persistent project data as the source of truth.
-4. Keep animation data independent from the timeline UI.
-5. Separate reusable definitions from scene instances.
-6. Separate rendering from persistent project data.
-7. Version project formats.
-8. Plan for project migrations.
-9. Keep platform-specific concerns isolated.
-10. Prefer testable, small components.
-11. Avoid unnecessary dependencies.
-12. Do not implement future features prematurely.
-13. Prefer measured optimisation over speculative optimisation.
-14. Document major architectural changes.
-15. Preserve the ability to save, load, test, preview, and export using the
-    underlying project model rather than UI-specific state.
-    ---
-
-## 21. Architectural Changes Require Review
-
-AI agents must not silently introduce major architectural changes.
-
-If the current architecture prevents a required feature from being implemented
-correctly, the agent should:
-
-1. Explain the limitation.
-2. Describe the proposed architectural change.
-3. Identify affected components and documentation.
-4. Identify relevant tests.
-5. Ask for approval before making a major architectural change.
-
-Small implementation decisions that remain within the documented architecture
-do not require approval.
-
-When in doubt, prefer preserving the existing architecture and asking rather
-than silently expanding it.
+Unchanged from the earlier architecture: an AI agent must not silently change
+the layering, the data model, the file format or the dependency list. It
+should explain the limitation, propose the change, list affected files and
+tests, and wait for approval. Small decisions inside the documented
+architecture need no approval.

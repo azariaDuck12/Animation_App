@@ -1,3 +1,8 @@
+---
+description: Testing and verification standards
+alwaysApply: true
+---
+
 # Testing and Verification
 
 ## Purpose
@@ -145,4 +150,30 @@ Changes to project or asset formats should be treated as high-risk.
 
 When changing a persistent format:
 
-- Consider
+- Consider backwards compatibility with every earlier format version.
+- Add a fixture for the new version under `test/fixtures/format/`.
+- Test that every earlier fixture migrates to the current version and
+  passes schema validation.
+- Test that a project exported and re-imported is equal to the original.
+- Record the change in `docs/decisions.md`.
+
+A project that fails validation must be reported to the user, never
+silently repaired.
+
+---
+
+## 9. Verification on the Target Device
+
+The primary target and development device is a tablet. Before a UI
+change is complete, run the app on the tablet (or the equivalent device
+the change affects) and check touch interaction, layout at that screen
+size, and that no work is lost when the browser is backgrounded.
+
+---
+
+## Principle
+
+Tests exist to give confidence that the animation, character and project
+systems behave as intended for the user. Prefer a small number of tests
+that check real behaviour over a large number that check implementation
+details.

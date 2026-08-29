@@ -1,3 +1,8 @@
+---
+description: Documentation structure and standards for /docs
+alwaysApply: true
+---
+
 # Documentation Standards
 
 ## Purpose
@@ -35,284 +40,290 @@ When these disagree:
 3. If the difference represents an unintended implementation change, the
    implementation should be corrected.
 
-   Do not allow documentation and implementation to drift silently.
+Do not allow documentation and implementation to drift silently.
 
-   ---
+---
 
-   ## 2. Documentation Structure
+## 2. Documentation Structure
 
-   The project documentation should generally use:
+The project documentation should generally use:
 
-   /docs
+```text
+/docs
+  vision.md
+  roadmap.md
+  architecture.md
+  data-model.md
+  project-file-format.md
+  features.md
+  decisions.md
+  dev-environment.md
+  known-issues.md
+  glossary.md
+  archive/       superseded documents
+  reviews/       dated review reports
+```
 
-       vision.md
-           roadmap.md
-               architecture.md
-                   features.md
-                       decisions.md
-                           known-issues.md
-                               glossary.md
+Additional documentation may be added when it provides meaningful value.
 
-                               Additional documentation may be added when it provides meaningful value.
+Do not create unnecessary documentation files for trivial information.
 
-                               Do not create unnecessary documentation files for trivial information.
+---
 
-                               ---
+## 3. Vision
 
-                               ## 3. Vision
+`vision.md` describes the long-term purpose of the application.
 
-                               `vision.md` describes the long-term purpose of the application.
+It should explain:
 
-                               It should explain:
+- What the application is
+- Who it is for
+- The problems it is intended to solve
+- Important design principles
+- The long-term direction
 
-                               - What the application is
-                               - Who it is for
-                               - The problems it is intended to solve
-                               - Important design principles
-                               - The long-term direction
+The vision should not become a detailed implementation specification.
 
-                               The vision should not become a detailed implementation specification.
+---
 
-                               ---
+## 4. Roadmap
 
-                               ## 4. Roadmap
+`roadmap.md` describes planned development.
 
-                               `roadmap.md` describes planned development.
+Separate:
 
-                               Separate:
+- Completed
+- In progress
+- Planned
+- Future ideas
 
-                               - Completed
-                               - In progress
-                               - Planned
-                               - Future ideas
+Do not treat future ideas as committed features.
 
-                               Do not treat future ideas as committed features.
+The roadmap should reflect realistic priorities rather than every idea that
+has ever been discussed.
 
-                               The roadmap should reflect realistic priorities rather than every idea that
-                               has ever been discussed.
+---
 
-                               ---
+## 5. Architecture
 
-                               ## 5. Architecture
+`architecture.md` describes the current technical structure.
 
-                               `architecture.md` describes the current technical structure.
+It should explain:
 
-                               It should explain:
+- Major systems
+- Responsibilities
+- Relationships between systems
+- Important interfaces
+- Data flow
+- Platform boundaries
 
-                               - Major systems
-                               - Responsibilities
-                               - Relationships between systems
-                               - Important interfaces
-                               - Data flow
-                               - Platform boundaries
+Keep architectural documentation at a level that remains useful as
+implementation details change.
 
-                               Keep architectural documentation at a level that remains useful as
-                               implementation details change.
+Do not document every individual function.
 
-                               Do not document every individual function.
+---
 
-                               ---
+## 6. Features
 
-                               ## 6. Features
+`features.md` describes user-facing functionality.
 
-                               `features.md` describes user-facing functionality.
+Each significant feature should explain:
 
-                               Each significant feature should explain:
+- What it does
+- Why it exists
+- Important behaviour
+- Relevant limitations
+- Dependencies on other systems when useful
 
-                               - What it does
-                               - Why it exists
-                               - Important behaviour
-                               - Relevant limitations
-                               - Dependencies on other systems when useful
+Features should be described from the user's perspective where practical.
 
-                               Features should be described from the user's perspective where practical.
+---
 
-                               ---
+## 7. Architectural Decisions
 
-                               ## 7. Architectural Decisions
+`decisions.md` records important decisions that affect the long-term project.
 
-                               `decisions.md` records important decisions that affect the long-term project.
+Examples include:
 
-                               Examples include:
+- Choosing a framework
+- Choosing a rendering architecture
+- Choosing a project file format
+- Choosing a particular animation representation
+- Choosing a cross-platform strategy
+- Rejecting an important alternative
 
-                               - Choosing a framework
-                               - Choosing a rendering architecture
-                               - Choosing a project file format
-                               - Choosing a particular animation representation
-                               - Choosing a cross-platform strategy
-                               - Rejecting an important alternative
+A decision record should explain:
 
-                               A decision record should explain:
+- The decision
+- The date or project stage
+- The reasoning
+- Important alternatives considered
+- Consequences
 
-                               - The decision
-                               - The date or project stage
-                               - The reasoning
-                               - Important alternatives considered
-                               - Consequences
+Do not record every minor coding decision.
 
-                               Do not record every minor coding decision.
+---
 
-                               ---
+## 8. Known Issues
 
-                               ## 8. Known Issues
+`known-issues.md` records significant known problems.
 
-                               `known-issues.md` records significant known problems.
+Each issue should include, when appropriate:
 
-                               Each issue should include, when appropriate:
+- Description
+- Impact
+- Reproduction information
+- Current status
+- Possible workaround
+- Related issue or task
 
-                               - Description
-                               - Impact
-                               - Reproduction information
-                               - Current status
-                               - Possible workaround
-                               - Related issue or task
+Remove or archive issues when they are resolved rather than leaving outdated
+information indefinitely.
 
-                               Remove or archive issues when they are resolved rather than leaving outdated
-                               information indefinitely.
+---
 
-                               ---
+## 9. Glossary
 
-                               ## 9. Glossary
+`glossary.md` defines project-specific terminology.
 
-                               `glossary.md` defines project-specific terminology.
+Use it for terms that could be ambiguous or have a specific meaning within
+Animation_App.
 
-                               Use it for terms that could be ambiguous or have a specific meaning within
-                               Animation_App.
+Examples may eventually include:
 
-                               Examples may eventually include:
+- Model
+- Part
+- Pivot
+- Parent
+- Child
+- Pose
+- Outfit
+- Scene
+- Asset
+- Keyframe
+- Deformer
+- Layer
 
-                               - Model
-                               - Part
-                               - Pivot
-                               - Parent
-                               - Child
-                               - Pose
-                               - Outfit
-                               - Scene
-                               - Asset
-                               - Keyframe
-                               - Deformer
-                               - Layer
+Use consistent terminology throughout the project.
 
-                               Use consistent terminology throughout the project.
+---
 
-                               ---
+## 10. When Documentation Must Be Updated
 
-                               ## 10. When Documentation Must Be Updated
+Documentation should be reviewed when a change affects:
 
-                               Documentation should be reviewed when a change affects:
+- Architecture
+- Public interfaces
+- Persistent data formats
+- Major user-facing behaviour
+- Development workflow
+- Dependencies
+- Platform support
+- Important project decisions
 
-                               - Architecture
-                               - Public interfaces
-                               - Persistent data formats
-                               - Major user-facing behaviour
-                               - Development workflow
-                               - Dependencies
-                               - Platform support
-                               - Important project decisions
+Not every code change requires documentation.
 
-                               Not every code change requires documentation.
+---
 
-                               ---
+## 11. Documentation Quality
 
-                               ## 11. Documentation Quality
+Documentation should be:
 
-                               Documentation should be:
+- Accurate
+- Concise
+- Understandable
+- Maintained
+- Consistent with the project
 
-                               - Accurate
-                               - Concise
-                               - Understandable
-                               - Maintained
-                               - Consistent with the project
+Prefer concrete explanations over vague statements.
 
-                               Prefer concrete explanations over vague statements.
+Avoid documenting information that is likely to become obsolete quickly unless
+that information is genuinely useful.
 
-                               Avoid documenting information that is likely to become obsolete quickly unless
-                               that information is genuinely useful.
+---
 
-                               ---
+## 12. AI-Generated Documentation
 
-                               ## 12. AI-Generated Documentation
+AI agents may help create and update documentation, but they must not invent
+project facts.
 
-                               AI agents may help create and update documentation, but they must not invent
-                               project facts.
+If information is unknown:
 
-                               If information is unknown:
+- Mark it as unknown,
+- identify it as a proposal,
+- or ask for clarification.
 
-                               - Mark it as unknown,
-                               - identify it as a proposal,
-                               - or ask for clarification.
+Do not present assumptions as established project decisions.
 
-                               Do not present assumptions as established project decisions.
+---
 
-                               ---
+## 13. Proposals vs Decisions
 
-                               ## 13. Proposals vs Decisions
+Clearly distinguish between:
 
-                               Clearly distinguish between:
+- Existing behaviour
+- Approved plans
+- Proposed ideas
+- Future possibilities
 
-                               - Existing behaviour
-                               - Approved plans
-                               - Proposed ideas
-                               - Future possibilities
+For example:
 
-                               For example:
+"Animation will use system X" should not be written as an established fact
+until that decision has actually been made.
 
-                               "Animation will use system X" should not be written as an established fact
-                               until that decision has actually been made.
+Instead:
 
-                               Instead:
+"Proposed: evaluate system X for animation."
 
-                               "Proposed: evaluate system X for animation."
+This prevents speculative AI output from becoming accidental project policy.
 
-                               This prevents speculative AI output from becoming accidental project policy.
+---
 
-                               ---
+## 14. Documentation and Code Changes
 
-                               ## 14. Documentation and Code Changes
+When a change requires documentation:
 
-                               When a change requires documentation:
+1. Implement the change.
+2. Verify the implementation.
+3. Update the relevant documentation.
+4. Review the documentation for accuracy.
 
-                               1. Implement the change.
-                               2. Verify the implementation.
-                               3. Update the relevant documentation.
-                               4. Review the documentation for accuracy.
+Do not update documentation to claim behaviour that has not been implemented.
 
-                               Do not update documentation to claim behaviour that has not been implemented.
+---
 
-                               ---
+## 15. Historical Information
 
-                               ## 15. Historical Information
+Important historical decisions should not be silently rewritten.
 
-                               Important historical decisions should not be silently rewritten.
+When an architectural decision changes:
 
-                               When an architectural decision changes:
+- Record the new decision.
+- Explain why it changed.
+- Preserve enough context to understand the previous decision.
 
-                               - Record the new decision.
-                               - Explain why it changed.
-                               - Preserve enough context to understand the previous decision.
+This helps future developers and AI agents understand how the project evolved.
 
-                               This helps future developers and AI agents understand how the project evolved.
+---
 
-                               ---
+## 16. Documentation Completion Checklist
 
-                               ## 16. Documentation Completion Checklist
+When documentation is required:
 
-                               When documentation is required:
+- [ ] Relevant documentation was identified.
+- [ ] Existing documentation was checked.
+- [ ] New information is accurate.
+- [ ] Proposals are clearly marked as proposals.
+- [ ] Outdated information was corrected.
+- [ ] Important decisions were recorded.
+- [ ] Terminology remains consistent.
 
-                               - [ ] Relevant documentation was identified.
-                               - [ ] Existing documentation was checked.
-                               - [ ] New information is accurate.
-                               - [ ] Proposals are clearly marked as proposals.
-                               - [ ] Outdated information was corrected.
-                               - [ ] Important decisions were recorded.
-                               - [ ] Terminology remains consistent.
+---
 
-                               ---
+## Principle
 
-                               ## Principle
+Documentation should preserve project knowledge.
 
-                               Documentation should preserve project knowledge.
-
-                               A future developer or AI agent should be able to understand not only what the
-                               project currently does, but also why important decisions were made.
+A future developer or AI agent should be able to understand not only what the
+project currently does, but also why important decisions were made.
