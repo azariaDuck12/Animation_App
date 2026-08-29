@@ -2,168 +2,147 @@
 
 ## Status
 
-This roadmap describes the intended development order for Animation_App.
+Adopted 2026-08-29 (ADR-001). Phase 0 and Phase 1 are committed; later
+phases are direction.
 
-The roadmap is a planning document, not a promise that every future feature
-will be implemented.
-
-Priorities may change as development reveals new technical information.
-
----
-
-# Phase 0 — Project Foundation
-
-## Goal
-
-Establish a stable development foundation before implementing application
-features.
-
-### Tasks
-
-- [x] Create GitHub repository
-- [x] Establish project documentation structure
-- [x] Establish Cursor AI rules
-- [x] Define project constitution
-- [x] Define AI development workflow
-- [x] Define testing standards
-- [x] Define documentation standards
-- [x] Choose Flutter as the application foundation
-- [ ] Finalise technical architecture
-- [ ] Define project data model
-- [ ] Define project file format
-- [ ] Define initial testing strategy
-- [ ] Set up Flutter development environment
-- [ ] Create initial application shell
-- [ ] Establish CI/build verification
+The order is chosen so that something visible runs on the tablet as early
+as possible, and so that work cannot be lost once real editing begins.
 
 ---
 
-# Phase 1 — Core MVP
+## Phase 0 — Foundation
 
-## Goal
+Goal: the app can be edited, run and tested on the tablet; nothing else is
+built until this is true.
 
-Prove the fundamental Animation_App workflow.
+- [x] Decide: adopt the web-first architecture (option A of
+      `reviews/2026-08-29-architecture-review.md`) — 2026-08-29.
+- [x] Record the decision in `decisions.md` (ADR-001).
+- [x] Record the development tablet (Lenovo Idea Tab Pro, Android) in
+      `dev-environment.md`.
+- [ ] Make the repository public and enable GitHub Pages (decided
+      2026-08-29; owner to do).
+- [ ] Archive the Flutter scaffold: remove `lib/`, `android/`, `ios/`,
+      `linux/`, `macos/`, `windows/`, `web/`, `pubspec.*`, `.metadata`,
+      `analysis_options.yaml` in one commit titled so it is easy to find.
+- [ ] Scaffold: `npm create vite@latest -- --template react-ts`, strict
+      TypeScript, Vitest, Prettier. Folder layout from `architecture.md` §3.
+- [ ] Replace `.devcontainer` with the Node dev container (optional,
+      enables Codespaces).
+- [x] Add `AGENTS.md` at the root and `CLAUDE.md` containing `@AGENTS.md`;
+      fix the truncated Cursor rule files.
+- [x] Move adopted docs into `docs/`; archive the old architecture doc.
+- [ ] **Milestone: "Hello, canvas" on the tablet** — a page that draws an
+      imported image on a canvas, served from the tablet itself (Termux) or
+      from the chosen cloud/PC workflow, opened in the tablet's browser.
+      This proves the development loop (`dev-environment.md`).
+- [ ] GitHub Actions: typecheck, test, build on every push.
+- [ ] Deploy `main` to GitHub Pages (`base: '/Animation_App/'`); open the
+      URL on the tablet.
 
-The user should be able to create a simple animated character from imported
-image parts, animate it, preview it, save the project, and export the result.
+## Phase 1 — Core MVP
 
----
+Goal: the Phase 1 completion criteria below.
 
-## 1. Project System
+### 1. Domain model (no UI)
 
-- [ ] Create project
-- [ ] Open project
-- [ ] Save project
-- [ ] Reopen project
-- [ ] Project metadata
-- [ ] Project format version
-- [ ] Basic project migration strategy
+- [ ] Types and zod schema for `Project` (`data-model.md`).
+- [ ] Transform matrix module; composition with pivot; tests.
+- [ ] Keyframe interpolation and easing; tests.
+- [ ] `evaluateScene`; tests for hierarchy, draw order, visibility.
+- [ ] `migrate()` with the v1 fixture; test.
 
----
+### 2. Store, commands, autosave
 
-## 2. Scene
+- [ ] `ProjectStore` with `dispatch`, `transient`, undo, redo.
+- [ ] Commands: create/rename/delete for assets, characters, parts,
+      scenes, objects; set transform; set pivot; set parent; reorder.
+- [ ] IndexedDB persistence; autosave; recent projects list.
+- [ ] Home screen: new / open / delete project.
 
-- [ ] Create scene
-- [ ] Canvas
-- [ ] Zoom
-- [ ] Pan
-- [ ] Select objects
-- [ ] Basic scene composition
+### 3. Renderer and viewport
 
----
+- [ ] Image import → `Asset` + Blob; `ImageCache`.
+- [ ] `renderScene`; viewport canvas with zoom/pan; overlay canvas.
+- [ ] **Milestone: an imported image appears in a scene on the tablet.**
 
-## 3. Asset Import
+### 4. Selection and transform handles
 
-- [ ] Import image assets
-- [ ] Import transparent PNG assets
-- [ ] Store/reference imported assets
-- [ ] Display imported assets in scenes
+- [ ] Hit testing; tap to select; layers panel selection sync.
+- [ ] Move / rotate / scale handles (Pointer Events, 44 px targets).
+- [ ] Inspector with numeric fields.
 
----
+### 5. Layers panel
 
-## 4. Layers
+- [ ] Back-to-front list; drag reorder; visibility; lock.
+- [ ] Expand a character instance to its parts.
 
-- [ ] Layer list
-- [ ] Layer selection
-- [ ] Reordering
-- [ ] Visibility
-- [ ] Locking
-- [ ] Hierarchical organisation
-- [ ] Front/back ordering
+### 6. Character mode
 
----
+- [ ] Character list; create; open in Character mode.
+- [ ] Add parts from assets; parent picker; pivot tool; rest transforms.
+- [ ] Draw order editing.
+- [ ] Place an instance in a scene.
+- [ ] **Milestone: a two-part character (body + arm) built and placed.**
 
-## 5. Transforms
+### 7. Timeline and playback
 
-- [ ] Position
-- [ ] Rotation
-- [ ] Scale
-- [ ] Pivot points
-- [ ] Basic transform controls
+- [ ] Timeline component: frames, playhead, scrub, zoom.
+- [ ] Record keyframes from inspector/handles; keyframe markers; move,
+      delete, copy/paste.
+- [ ] Easing picker.
+- [ ] Play / pause / loop with the rAF clock.
+- [ ] **Milestone: the arm waves.**
 
----
+### 8. Export
 
-## 6. Character / Model System
+- [ ] PNG still export.
+- [ ] MP4 export via WebCodecs in a worker; progress; cancel.
+- [ ] WebM fallback via MediaRecorder.
+- [ ] **Milestone: an MP4 opens in the tablet's gallery.**
 
-- [ ] Create character/model
-- [ ] Add image parts
-- [ ] Name parts
-- [ ] Set parent/child relationships
-- [ ] Set pivots
-- [ ] Move parts through hierarchy
-- [ ] Save reusable model
+### 9. Project file and polish
 
----
+- [ ] `.animproj` export/import; round-trip test.
+- [ ] Error messages for missing assets, unsupported versions, quota.
+- [ ] Touch polish: pinch zoom, stacked layout on phones.
+- [ ] Storage usage indicator; `storage.persist()`.
 
-## 7. Animation
-
-- [ ] Timeline
-- [ ] Playhead
-- [ ] Scrubbing
-- [ ] Keyframes
-- [ ] Position animation
-- [ ] Rotation animation
-- [ ] Scale animation
-- [ ] Basic interpolation
-- [ ] Basic easing
-- [ ] Play
-- [ ] Pause
-- [ ] Preview
-
----
-
-## 8. Export
-
-- [ ] Export still image
-- [ ] Basic video export
-- [ ] Basic resolution setting
-- [ ] Basic frame-rate setting
-
----
-
-# Phase 1 Completion Criteria
-
-The MVP should be considered functionally complete when a user can:
+### Phase 1 completion criteria
 
 ```text
 Create project
-      ↓
-      Import image parts
-            ↓
-            Build a simple character
-                  ↓
-                  Set pivots
-                        ↓
-                        Create parent/child relationships
-                              ↓
-                              Animate position/rotation/scale
-                                    ↓
-                                    Preview animation
-                                          ↓
-                                          Save project
-                                                ↓
-                                                Close application
-                                                      ↓
-                                                      Reopen project
-                                                            ↓
-                                                            Export image/video
+  ↓ Import image parts
+  ↓ Build a character (parts, pivots, parent/child, draw order)
+  ↓ Place it in a scene
+  ↓ Animate position / rotation / scale / opacity with keyframes
+  ↓ Preview at full speed
+  ↓ Close the browser; reopen; everything is still there
+  ↓ Export .animproj, delete the project, import it back
+  ↓ Export PNG and MP4 and view them on the tablet
+```
+
+All of the above performed on the low-specification tablet, not only on a
+PC.
+
+## Phase 2 — P1 features
+
+In rough order of value to Gacha animators: image-swap keyframes; poses;
+audio with waveform and muxed export; multi-scene export; PWA install and
+offline; onion skin; camera; text; GIF/image-sequence export; alpha-aware
+selection; keyboard shortcuts.
+
+## Phase 3 and beyond
+
+P2–P5 from `features.md` as interest and time allow. Each large item (mesh
+deformers, IK, drawing) gets its own ADR before work starts; deformers are
+the first place where a Rust → WASM module might be justified by
+measurement (ADR-002).
+
+---
+
+## Things this roadmap deliberately does not schedule
+
+- iOS/Android store packaging.
+- A backend of any kind.
+- Performance work before profiling on the tablet shows a need.
