@@ -1,36 +1,72 @@
 ---
-description: Architecture rules for Animation_App
+description: Architecture rules for Animation_App (web-first TypeScript)
 globs:
-  - "lib/**/*.dart"
-  - "test/**/*.dart"
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+  - "test/**/*.ts"
 alwaysApply: true
 ---
 
 # Animation_App Architecture Rules
 
-## Purpose
+The human-readable architecture specification is `docs/architecture.md`;
+the data model is `docs/data-model.md`; the file format is
+`docs/project-file-format.md`; decisions are in `docs/decisions.md`. The
+condensed rule set that every agent reads is `AGENTS.md` at the root.
 
-These rules define how AI agents must structure and modify application code.
-
-The human-readable architecture specification is maintained in:
-
-`docs/architecture.md`
-
-The conceptual data model is maintained in:
-
-`docs/data-model.md`
-
-AI agents must follow those documents when implementing features.
-
----
-
-## 1. Respect the Architecture Boundaries
-
-Use the following conceptual layers:
+## 1. Layers and dependency direction
 
 ```text
-Presentation
-     ↓
-Application
-     ↓
-Domain
+src/domain   pure TypeScript: types, schema, transforms, animation
+             evaluation, migrations. No DOM, no React, no browser APIs.
+src/app      commands, ProjectStore (undo/redo), editor state, playback.
+             Depends on domain only.
+src/render   Canvas 2D renderer, image cache, hit testing.
+             Depends on domain only.
+src/infra    IndexedDB, .animproj files, image decoding, video export.
+             Depends on domain only.
+src/ui       React components. May depend on all of the above.
+```
+
+Never import from `ui` into any other layer. Never import a browser API
+into `domain` or `app`; their tests run in Node and will fail if you do.
+
+## 2. Source of truth
+
+The `Project` value held by the store is the only source of truth. Do not
+keep a second copy of scene, character or animation data in a component,
+the canvas, or a library's scene graph. Editor state (selection, playhead,
+zoom) is separate and is never saved to the project file.
+
+## 3. Commands
+
+Every change to the project goes through `store.dispatch(name, draft =>
+…)`. Never mutate the project elsewhere. Continuous gestures use
+`store.transient` and commit one `dispatch` at the end.
+
+## 4. Rendering
+
+One renderer function serves the viewport, playback and export. Do not add
+a preview-only or export-only drawing path. Overlays (handles, pivots,
+selection) are drawn on a separate canvas.
+
+## 5. Persistent data
+
+The file format is user data. Changing `docs/data-model.md`,
+`docs/project-file-format.md`, the zod schema or the IndexedDB layout
+requires an ADR, a `formatVersion` bump where the rules in
+`docs/project-file-format.md` §4 say so, and migration tests.
+
+## 6. Dependencies
+
+The runtime dependency list is fixed in `docs/architecture.md` §2. Adding
+one requires an ADR and a sentence in the pull request explaining why the
+existing tools are insufficient.
+
+## 7. Architectural changes require review
+
+If the current architecture prevents a required feature from being
+implemented correctly: explain the limitation, describe the proposed
+change, identify affected components, documentation and tests, and ask for
+approval before making it. Small decisions inside the documented
+architecture do not require approval.

@@ -1,3 +1,8 @@
+---
+description: Project constitution: core principles and AI behaviour for Animation_App
+alwaysApply: true
+---
+
 # Project Constitution
 
 ## Purpose
@@ -5,6 +10,10 @@
 This project is a cross-platform 2D animation and video editing application
 designed primarily for Gacha animators, while remaining useful for other
 2D puppet, stop-motion, keyframe, and image-based animation workflows.
+
+The condensed, tool-agnostic version of all project rules is `AGENTS.md` at
+the repository root. Agents that cannot read this directory (any agent used
+from the tablet) read that file instead; keep the two consistent.
 
 ## Core Principles
 
